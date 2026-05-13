@@ -2,27 +2,34 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+    return twMerge(clsx(inputs));
 }
+
+// 1. 定义一个全局变量存储动态获取的 BaseURL，默认给个保底值
+let globalTmdbBaseUrl = 'https://image.tmdb.org/t/p/';
+
+// 2. 提供一个注入方法
+export function setTmdbBaseUrl(url: string) {
+    if (url) {
+        globalTmdbBaseUrl = url;
+        console.log("TMDB 动态 BaseURL 已更新为:", globalTmdbBaseUrl);
+    }
+}
+
 /**
- * 更加健壮的 TMDB 图片加载器
- * 增加支持：原图访问、自动占位、CDN 代理
+ * 拼接完整的 TMDB 图片地址
+ * 采用全局动态 BaseURL + 国内网络防屏蔽代理
  */
-export function getTmdbImageUrl(
-    path: string | null | undefined,
-    size: 'w92' | 'w154' | 'w185' | 'w342' | 'w500' | 'w780' | 'original' = 'w500'
-): string {
-    // 1. 处理空路径：直接返回本地 public 文件夹下的占位图
-    if (!path || path === 'null' || path === '') {
+export function getTmdbImageUrl(path: string | null, size: string = 'w500'): string {
+    if (!path) {
         return '/default-movie-poster.png';
     }
 
-    // 2. 清理路径：确保路径以 / 开头
-    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    // 动态拼接：BaseURL + 尺寸 + 路径
+    let fullUrl = `${globalTmdbBaseUrl}${size}${path}`;
 
-    // 3. 构建 URL：使用 wsrv.nl 代理绕过国内网络封锁
-    // 如果你有 API Key，可以直接请求 https://api.themoviedb.org/3/configuration 获取最新的 BaseURL
-    const tmdbUrl = `image.tmdb.org/t/p/${size}${cleanPath}`;
-
-    return `https://wsrv.nl/?url=${tmdbUrl}&af&il`; // 增加优化参数：自适应格式、渐进式加载
+    // wsrv.nl 的代理
+    // 需要把 https:// 头部去掉再交给代理服务
+    const urlWithoutProtocol = fullUrl.replace(/^https?:\/\//, '');
+    return `https://wsrv.nl/?url=${urlWithoutProtocol}`;
 }
