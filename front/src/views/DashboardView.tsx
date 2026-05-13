@@ -176,27 +176,21 @@ const DashboardView: React.FC<DashboardViewProps> = ({ data }) => {
                   <td className="py-8 px-4">
                     <span className="font-serif text-2xl font-light italic text-natural-muted/60">{index + 1}</span>
                   </td>
-                  <td className="py-8 px-4">
-                    <div className="flex items-center gap-6">
-                        <td className="py-8 px-4">
-                            <div className="flex items-center gap-6">
-                                <div className="w-12 h-18 rounded-xl overflow-hidden shadow-soft border border-natural-border flex-shrink-0">
-                                    <img
-                                        src={getTmdbImageUrl(movie.posterPath, 'w92')}
-                                        alt={movie.title}
-                                        className="w-full h-full object-cover bg-natural-sidebar"
-                                        onError={(e) => {
-                                            // 兜底方案：如果 TMDB 图片加载失败（比如网络问题），自动替换为本地占位图
-                                            (e.target as HTMLImageElement).src = '/default-movie-poster.png';
-                                        }}
-                                    />
-                                </div>
-                                <p className="text-sm font-bold text-natural-text group-hover:text-natural-primary transition-colors">{movie.title}</p>
+                    <td className="py-8 px-4">
+                        <div className="flex items-center gap-6">
+                            <div className="w-12 h-18 rounded-xl overflow-hidden shadow-soft border border-natural-border flex-shrink-0">
+                                <img
+                                    src={getTmdbImageUrl(movie.posterPath, 'w92')}
+                                    alt={movie.title}
+                                    className="w-full h-full object-cover bg-natural-sidebar"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).src = '/default-movie-poster.png';
+                                    }}
+                                />
                             </div>
-                        </td>
-                      <p className="text-sm font-bold text-natural-text group-hover:text-natural-primary transition-colors">{movie.title}</p>
-                    </div>
-                  </td>
+                            <p className="text-sm font-bold text-natural-text group-hover:text-natural-primary transition-colors">{movie.title}</p>
+                        </div>
+                    </td>
                   <td className="py-8 px-4">
                     <span className="text-xs font-medium text-natural-muted">{formatCurrency(movie.budget)}</span>
                   </td>
