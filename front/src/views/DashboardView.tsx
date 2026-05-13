@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { TrendingUp, Target, RotateCw, BarChart3, DollarSign, Film, Star } from 'lucide-react';
 import {
     Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     Pie, PieChart as RePieChart, Cell
 } from 'recharts';
-import { cn, getTmdbImageUrl } from '../lib/utils';
+import { cn, getTmdbImageSources } from '../lib/utils';
 import { DashboardData } from '../types';
 
 interface DashboardViewProps {
@@ -22,8 +22,34 @@ function formatCurrency(value: number): string {
     return `$${value}`;
 }
 
+const MoviePoster: React.FC<{ posterPath: string | null, title: string }> = ({ posterPath, title }) => {
+    const sources = getTmdbImageSources(posterPath, 'w92');
+    const [errorCount, setErrorCount] = useState(0);
+
+    // 根据当前失败次数，智能选择加载的 CDN 节点。如果全部失败，就使用本地占位图
+    const currentSrc = errorCount < sources.length
+        ? sources[errorCount]
+        : '/default-movie-poster.png';
+
+    return (
+        <img
+            src={currentSrc}
+            alt={title}
+            className="w-full h-full object-cover transition-opacity duration-300"
+            onError={(e) => {
+                // 防止连本地默认图也加载失败引发的死循环崩溃
+                if (errorCount >= sources.length) {
+                    e.currentTarget.onerror = null;
+                    return;
+                }
+                // 触发状态更新，切换到下一个备用 CDN 节点
+                setErrorCount(prev => prev + 1);
+            }}
+        />
+    );
+};
+
 const DashboardView: React.FC<DashboardViewProps> = ({ data }) => {
-    // 防御性编程：提供默认值，防止后端数据异常导致前端白屏
     const {
         metrics = { totalMovies: 0, totalRevenue: 0, totalBudget: 0, averageRating: 0 },
         roiMovies = [],
@@ -36,81 +62,37 @@ const DashboardView: React.FC<DashboardViewProps> = ({ data }) => {
     const top10Roi = roiMovies.slice(0, 10);
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-10"
-        >
-            {/* Global Metrics Cards */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
+            {/* Metrics Cards */}
             <div className="grid grid-cols-4 gap-8">
                 {[
-                    {
-                        label: '电影总数',
-                        value: metrics.totalMovies.toLocaleString(),
-                        icon: Film,
-                        accent: 'bg-natural-primary',
-                    },
-                    {
-                        label: '历史总票房',
-                        value: formatCurrency(metrics.totalRevenue),
-                        icon: DollarSign,
-                        accent: 'bg-natural-secondary',
-                    },
-                    {
-                        label: '历史总投资',
-                        value: formatCurrency(metrics.totalBudget),
-                        icon: TrendingUp,
-                        accent: 'bg-natural-accent',
-                    },
-                    {
-                        label: '全局平均评分',
-                        value: (metrics.averageRating || 0).toFixed(2),
-                        icon: Star,
-                        accent: 'bg-natural-primary',
-                    },
+                    { label: '电影总数', value: metrics.totalMovies.toLocaleString(), icon: Film, accent: 'bg-natural-primary' },
+                    { label: '历史总票房', value: formatCurrency(metrics.totalRevenue), icon: DollarSign, accent: 'bg-natural-secondary' },
+                    { label: '历史总投资', value: formatCurrency(metrics.totalBudget), icon: TrendingUp, accent: 'bg-natural-accent' },
+                    { label: '全局平均评分', value: (metrics.averageRating || 0).toFixed(2), icon: Star, accent: 'bg-natural-primary' },
                 ].map((card, i) => (
-                    <motion.div
-                        key={card.label}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="bg-white glass rounded-[32px] p-8 border border-natural-border shadow-soft flex flex-col gap-6 group hover:scale-[1.02] transition-transform"
-                    >
+                    <motion.div key={card.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="bg-white glass rounded-[32px] p-8 border border-natural-border shadow-soft flex flex-col gap-6 group hover:scale-[1.02] transition-transform">
                         <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold text-natural-muted uppercase tracking-widest">{card.label}</span>
-                            <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-soft", card.accent)}>
-                                <card.icon className="w-5 h-5" />
-                            </div>
+                            <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-soft", card.accent)}><card.icon className="w-5 h-5" /></div>
                         </div>
                         <span className="font-serif text-4xl italic text-natural-primary leading-none">{card.value}</span>
                     </motion.div>
                 ))}
             </div>
 
-            {/* Genre Distribution + Rating Distribution */}
+            {/* Charts */}
             <div className="grid grid-cols-12 gap-8">
                 <div className="col-span-5 bg-white glass rounded-[40px] p-10 shadow-soft border border-natural-border flex flex-col">
                     <div className="flex items-center justify-between mb-8">
                         <h3 className="text-xs font-semibold uppercase text-natural-muted tracking-widest">类型分布</h3>
                         <RotateCw className="w-4 h-4 text-natural-muted opacity-40" />
                     </div>
-                    {/* 终极修复：加了 w-full overflow-hidden 锁定边界，ResponsiveContainer 用 99% */}
                     <div className="h-64 relative w-full overflow-hidden">
-                        <ResponsiveContainer width="99%" height="100%">
+                        <ResponsiveContainer width="99%" height="100%" minWidth={1}>
                             <RePieChart>
-                                <Pie
-                                    data={genrePieData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={3}
-                                    dataKey="value"
-                                    isAnimationActive={false} // 关键：关闭内部初始动画，彻底杜绝首次渲染计算报错
-                                >
-                                    {genrePieData.map((_entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
+                                <Pie data={genrePieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={3} dataKey="value" isAnimationActive={false}>
+                                    {genrePieData.map((_entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
                                 </Pie>
                                 <Tooltip contentStyle={{ borderRadius: '20px', border: '1px solid #E5E5DE' }} />
                             </RePieChart>
@@ -136,7 +118,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ data }) => {
                         <BarChart3 className="w-4 h-4 text-natural-muted opacity-40" />
                     </div>
                     <div className="h-64 relative w-full overflow-hidden">
-                        <ResponsiveContainer width="99%" height="100%">
+                        <ResponsiveContainer width="99%" height="100%" minWidth={1}>
                             <BarChart data={ratings}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E5DE" />
                                 <XAxis dataKey="ratingRange" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#8A8A82', fontWeight: 600 }} />
@@ -149,7 +131,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ data }) => {
                 </div>
             </div>
 
-            {/* ROI Leaderboard */}
+            {/* ROI 排行榜 */}
             <div className="bg-white glass rounded-[40px] p-12 shadow-soft border border-natural-border">
                 <div className="flex items-center justify-between mb-12">
                     <div>
@@ -174,49 +156,21 @@ const DashboardView: React.FC<DashboardViewProps> = ({ data }) => {
                         </thead>
                         <tbody>
                         {top10Roi.map((movie, index) => (
-                            <motion.tr
-                                key={movie.movieId}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                                className="group hover:bg-natural-sidebar/40 transition-all duration-300 border-b border-natural-border/50"
-                            >
-                                <td className="py-8 px-4">
-                                    <span className="font-serif text-2xl font-light italic text-natural-muted/60">{index + 1}</span>
-                                </td>
+                            <motion.tr key={movie.movieId} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.05 }} className="group hover:bg-natural-sidebar/40 transition-all duration-300 border-b border-natural-border/50">
+                                <td className="py-8 px-4"><span className="font-serif text-2xl font-light italic text-natural-muted/60">{index + 1}</span></td>
                                 <td className="py-8 px-4">
                                     <div className="flex items-center gap-6">
                                         <div className="w-12 h-18 rounded-xl overflow-hidden shadow-soft border border-natural-border flex-shrink-0 bg-natural-sidebar relative">
-                                            <img
-                                                src={getTmdbImageUrl(movie.posterPath, 'w92')} // 列表页使用低分辨率 w92，加载极快
-                                                alt={movie.title}
-                                                loading="lazy" // 开启浏览器原生懒加载
-                                                className="w-full h-full object-cover transition-opacity duration-500"
-                                                onLoad={(e) => (e.currentTarget.style.opacity = '1')}
-                                                style={{ opacity: 0 }} // 初始透明，加载完后淡入
-                                                onError={(e) => {
-                                                    e.currentTarget.onerror = null;
-                                                    e.currentTarget.src = '/default-movie-poster.png';
-                                                }}
-                                            />
+                                            {/* 🎬 直接调用我们新写的 React 专属图片组件 */}
+                                            <MoviePoster posterPath={movie.posterPath} title={movie.title} />
                                         </div>
                                         <p className="text-sm font-bold text-natural-text group-hover:text-natural-primary transition-colors">{movie.title}</p>
                                     </div>
                                 </td>
-                                <td className="py-8 px-4">
-                                    <span className="text-xs font-medium text-natural-muted">{formatCurrency(movie.budget)}</span>
-                                </td>
-                                <td className="py-8 px-4">
-                                    <span className="text-xs font-bold text-natural-text">{formatCurrency(movie.revenue)}</span>
-                                </td>
-                                <td className="py-8 px-4">
-                    <span className={cn("text-xs font-bold", movie.profit > 0 ? "text-emerald-600" : "text-red-500")}>
-                      {formatCurrency(movie.profit)}
-                    </span>
-                                </td>
-                                <td className="py-8 px-4">
-                                    <span className="text-sm font-black text-natural-secondary">{(movie.roiRatio || 0).toFixed(1)}x</span>
-                                </td>
+                                <td className="py-8 px-4"><span className="text-xs font-medium text-natural-muted">{formatCurrency(movie.budget)}</span></td>
+                                <td className="py-8 px-4"><span className="text-xs font-bold text-natural-text">{formatCurrency(movie.revenue)}</span></td>
+                                <td className="py-8 px-4"><span className={cn("text-xs font-bold", movie.profit > 0 ? "text-emerald-600" : "text-red-500")}>{formatCurrency(movie.profit)}</span></td>
+                                <td className="py-8 px-4"><span className="text-sm font-black text-natural-secondary">{(movie.roiRatio || 0).toFixed(1)}x</span></td>
                             </motion.tr>
                         ))}
                         </tbody>

@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
@@ -12,7 +7,6 @@ import DiscoveryView from './views/DiscoveryView';
 import CommunityView from './views/CommunityView';
 import { MovieService } from './services/api';
 import type { DashboardData } from './types';
-import { setTmdbBaseUrl } from './lib/utils'; // 引入动态设置 BaseURL 的方法
 
 export default function App() {
     const [data, setData] = useState<DashboardData | null>(null);
@@ -20,20 +14,6 @@ export default function App() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // 1. 初始化获取 TMDB 全局配置
-    useEffect(() => {
-        fetch('/api/tmdb/config')
-            .then(res => res.json())
-            .then(result => {
-                // 如果后端成功返回了 data (即 secure_base_url)
-                if (result.code === 200 && result.data) {
-                    setTmdbBaseUrl(result.data);
-                }
-            })
-            .catch(err => console.error("TMDB 配置初始化失败, 将使用默认备用地址", err));
-    }, []);
-
-    // 2. 加载数据大屏核心数据
     useEffect(() => {
         const loadData = async () => {
             try {
@@ -63,10 +43,7 @@ export default function App() {
         return (
             <div className="h-screen w-screen flex flex-col items-center justify-center bg-natural-bg gap-4">
                 <p className="font-serif italic text-2xl text-red-800">{error || '数据缺失。'}</p>
-                <button
-                    onClick={() => window.location.reload()}
-                    className="px-6 py-2 bg-natural-primary text-white rounded-full text-xs font-bold uppercase tracking-widest"
-                >
+                <button onClick={() => window.location.reload()} className="px-6 py-2 bg-natural-primary text-white rounded-full text-xs font-bold uppercase tracking-widest">
                     尝试重新同步
                 </button>
             </div>
