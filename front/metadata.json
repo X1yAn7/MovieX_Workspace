@@ -1,0 +1,6 @@
+{
+  "name": "MovieLens 电影数据分析平台",
+  "description": "一个全面的电影数据分析仪表盘，包含产量趋势、财务统计和受众洞察。",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
