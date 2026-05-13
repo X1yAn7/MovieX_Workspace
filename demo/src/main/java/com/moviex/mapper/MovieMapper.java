@@ -10,6 +10,10 @@ public interface MovieMapper {
     @Select("SELECT * FROM movie_info WHERE id = #{id}")
     MovieInfo getById(@Param("id") Integer id);
 
+    /**
+     * 核心分页查询逻辑
+     * 增加 id ASC 作为稳定排序键，防止 LIMIT 切片出现数据重复或遗漏
+     */
     @Select("<script>" +
             "SELECT * FROM movie_info " +
             "<where>" +
@@ -35,7 +39,7 @@ public interface MovieMapper {
             "    AND budget &lt;= #{maxBudget}" +
             "  </if>" +
             "</where>" +
-            "ORDER BY ${orderBy} ${orderDir} " +
+            "ORDER BY ${orderBy} ${orderDir}, id ASC " +
             "LIMIT #{offset}, #{pageSize}" +
             "</script>")
     List<MovieInfo> search(@Param("title") String title,
@@ -84,9 +88,6 @@ public interface MovieMapper {
                      @Param("minBudget") Long minBudget,
                      @Param("maxBudget") Long maxBudget);
 
-    /**
-     * 降级策略：原 popularity 排序改为 revenue (票房) 排序
-     */
     @Select("SELECT * FROM movie_info ORDER BY revenue DESC LIMIT #{limit}")
     List<MovieInfo> getTopPopular(@Param("limit") Integer limit);
 

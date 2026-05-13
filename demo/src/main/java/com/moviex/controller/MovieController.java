@@ -22,7 +22,7 @@ public class MovieController {
      * GET /api/movies/{id}
      */
     @GetMapping("/{id}")
-    public Result<MovieInfo> getById(@PathVariable Integer id) {
+    public Result<MovieInfo> getById(@PathVariable("id") Integer id) {
         MovieInfo movie = movieService.getById(id);
         if (movie == null) {
             return Result.error("电影不存在");
@@ -32,21 +32,22 @@ public class MovieController {
 
     /**
      * 搜索/筛选电影（支持分页）
-     * GET /api/movies?title=xxx&genre=科幻&minRating=7&year=2023&page=1&pageSize=20&orderBy=popularity&orderDir=DESC
+     * 显式绑定所有查询参数，避免编译元数据丢失导致参数接收为 Null
+     * GET /api/movies?title=xxx&genre=科幻&...
      */
     @GetMapping
     public Result<PageResult<MovieInfo>> search(
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) String genre,
-            @RequestParam(required = false) Double minRating,
-            @RequestParam(required = false) Double maxRating,
-            @RequestParam(required = false) Integer year,
-            @RequestParam(required = false) Long minBudget,
-            @RequestParam(required = false) Long maxBudget,
-            @RequestParam(defaultValue = "popularity") String orderBy,
-            @RequestParam(defaultValue = "DESC") String orderDir,
-            @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "20") Integer pageSize) {
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "genre", required = false) String genre,
+            @RequestParam(value = "minRating", required = false) Double minRating,
+            @RequestParam(value = "maxRating", required = false) Double maxRating,
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "minBudget", required = false) Long minBudget,
+            @RequestParam(value = "maxBudget", required = false) Long maxBudget,
+            @RequestParam(value = "orderBy", defaultValue = "revenue") String orderBy,
+            @RequestParam(value = "orderDir", defaultValue = "DESC") String orderDir,
+            @RequestParam(value = "page", defaultValue = "1") Integer page,
+            @RequestParam(value = "pageSize", defaultValue = "20") Integer pageSize) {
         PageResult<MovieInfo> result = movieService.search(title, genre, minRating, maxRating,
                 year, minBudget, maxBudget, orderBy, orderDir, page, pageSize);
         return Result.success(result);
@@ -57,7 +58,7 @@ public class MovieController {
      * GET /api/movies/popular?limit=10
      */
     @GetMapping("/popular")
-    public Result<List<MovieInfo>> getPopular(@RequestParam(defaultValue = "10") Integer limit) {
+    public Result<List<MovieInfo>> getPopular(@RequestParam(value = "limit", defaultValue = "10") Integer limit) {
         return Result.success(movieService.getTopPopular(limit));
     }
 
@@ -66,7 +67,7 @@ public class MovieController {
      * GET /api/movies/top-rated?limit=10
      */
     @GetMapping("/top-rated")
-    public Result<List<MovieInfo>> getTopRated(@RequestParam(defaultValue = "10") Integer limit) {
+    public Result<List<MovieInfo>> getTopRated(@RequestParam(value = "limit", defaultValue = "10") Integer limit) {
         return Result.success(movieService.getTopRated(limit));
     }
 
@@ -93,7 +94,7 @@ public class MovieController {
      * PUT /api/movies/{id}
      */
     @PutMapping("/{id}")
-    public Result<MovieInfo> update(@PathVariable Integer id, @RequestBody MovieInfo movie) {
+    public Result<MovieInfo> update(@PathVariable("id") Integer id, @RequestBody MovieInfo movie) {
         movie.setId(id);
         return Result.success(movieService.update(movie));
     }
@@ -103,7 +104,7 @@ public class MovieController {
      * DELETE /api/movies/{id}
      */
     @DeleteMapping("/{id}")
-    public Result<Boolean> delete(@PathVariable Integer id) {
+    public Result<Boolean> delete(@PathVariable("id") Integer id) {
         boolean deleted = movieService.delete(id);
         return deleted ? Result.success(true) : Result.error("删除失败，电影不存在");
     }
