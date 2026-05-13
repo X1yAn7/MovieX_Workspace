@@ -9,18 +9,12 @@ interface DiscoveryViewProps {
     data: DashboardData;
 }
 
-/**
- * 格式化货币数值
- */
 function formatCurrency(value: number): string {
     if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(2)}B`;
     if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
     return `$${value.toLocaleString()}`;
 }
 
-/**
- * 自动降级图片组件
- */
 const PosterImage: React.FC<{ path: string | null; alt: string; className?: string }> = ({ path, alt, className }) => {
     const sources = [...getTmdbImageSources(path, 'w300'), '/default-movie-poster.png'];
     const [sourceIndex, setSourceIndex] = useState(0);
@@ -47,31 +41,47 @@ const DiscoveryView: React.FC<DiscoveryViewProps> = ({ data }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeGenre, setActiveGenre] = useState('全部');
     const [isLoading, setIsLoading] = useState(false);
+    const [isCountLoading, setIsCountLoading] = useState(false);
+    const [lastQuerySignature, setLastQuerySignature] = useState('');
 
     const genreOptions = ['全部', ...data.genres.slice(0, 12).map(g => g.genreName)];
 
-    /**
-     * 执行异步搜索请求
-     */
     const fetchMovies = useCallback(async () => {
+        const currentSignature = `${searchQuery}-${activeGenre}`;
+        const isFilterChanged = currentSignature !== lastQuerySignature;
+
+        const searchParams = {
+            title: searchQuery || undefined,
+            genre: activeGenre === '全部' ? undefined : activeGenre,
+            page: currentPage,
+            pageSize: pageSize,
+            orderBy: 'revenue',
+            orderDir: 'DESC',
+            skipCount: true // 核心指令：跳过耗时的 Count
+        };
+
         try {
             setIsLoading(true);
-            const result: PageResult<MovieInfo> = await MovieService.searchMovies({
-                title: searchQuery || undefined,
-                genre: activeGenre === '全部' ? undefined : activeGenre,
-                page: currentPage,
-                pageSize: pageSize,
-                orderBy: 'revenue', // 从 popularity 修改为已确认存在的 revenue 字段
-                orderDir: 'DESC'
-            });
+
+            // 1. 高速拉取并直接呈现列表
+            const result: PageResult<MovieInfo> = await MovieService.searchMovies(searchParams);
             setMovies(result.records);
-            setTotal(result.total);
+            setIsLoading(false); // 列表数据就位，立即解开加载遮罩
+
+            // 2. 防抖更新总数：仅当搜索条件（非页码）发生变化时，后台静默拉取总数
+            if (isFilterChanged || total === 0) {
+                setIsCountLoading(true);
+                const totalCount = await MovieService.searchMoviesCount(searchParams);
+                setTotal(totalCount);
+                setLastQuerySignature(currentSignature);
+            }
         } catch (error) {
             console.error('Failed to fetch movies:', error);
         } finally {
             setIsLoading(false);
+            setIsCountLoading(false);
         }
-    }, [searchQuery, activeGenre, currentPage, pageSize]);
+    }, [searchQuery, activeGenre, currentPage, pageSize, lastQuerySignature, total]);
 
     useEffect(() => {
         const handler = setTimeout(() => {
@@ -94,9 +104,9 @@ const DiscoveryView: React.FC<DiscoveryViewProps> = ({ data }) => {
         >
             <div className="bg-white glass border border-natural-border shadow-soft rounded-[48px] p-10 flex flex-col gap-8">
                 <div className="flex gap-10 items-start">
-          <span className="text-[10px] font-black text-natural-muted uppercase tracking-[0.2em] w-24 pt-2 shrink-0 opacity-40">
-            电影类型
-          </span>
+                    <span className="text-[10px] font-black text-natural-muted uppercase tracking-[0.2em] w-24 pt-2 shrink-0 opacity-40">
+                        电影类型
+                    </span>
                     <div className="flex flex-wrap gap-x-8 gap-y-4">
                         {genreOptions.map(opt => (
                             <button
@@ -124,9 +134,12 @@ const DiscoveryView: React.FC<DiscoveryViewProps> = ({ data }) => {
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-4">
                     <div>
                         <h2 className="font-serif text-4xl italic font-light text-natural-primary leading-none">影片库探索</h2>
-                        <p className="text-[11px] text-natural-muted font-bold uppercase tracking-[0.2em] mt-4 opacity-60">
-                            共发现 {total.toLocaleString()} 部相关影片
-                        </p>
+                        <div className="flex items-center gap-3 mt-4">
+                            <p className="text-[11px] text-natural-muted font-bold uppercase tracking-[0.2em] opacity-60">
+                                共发现 {total.toLocaleString()} 部相关影片
+                            </p>
+                            {isCountLoading && <Loader2 className="w-3 h-3 text-natural-primary animate-spin opacity-50" />}
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-6">
@@ -186,22 +199,22 @@ const DiscoveryView: React.FC<DiscoveryViewProps> = ({ data }) => {
                                             </div>
 
                                             <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-natural-primary/90 via-natural-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end">
-                        <span className="text-[10px] font-black text-white uppercase tracking-widest mb-1">
-                          {movie.releaseDate ? new Date(movie.releaseDate).getFullYear() : 'N/A'}
-                        </span>
+                                                <span className="text-[10px] font-black text-white uppercase tracking-widest mb-1">
+                                                    {movie.releaseDate ? new Date(movie.releaseDate).getFullYear() : 'N/A'}
+                                                </span>
                                                 <span className="text-xs font-bold text-white/90 truncate block">
-                          票房 {formatCurrency(movie.revenue)}
-                        </span>
+                                                    票房 {formatCurrency(movie.revenue)}
+                                                </span>
                                             </div>
                                         </div>
 
                                         <div className="space-y-2 px-2">
                                             <h4 className="text-sm font-bold text-natural-text group-hover:text-natural-primary transition-colors truncate">
-                                                {movie.title}
+                                                {movie.title} <span className="font-mono text-[9px] text-natural-muted opacity-40 ml-1">#{movie.id}</span>
                                             </h4>
                                             <div className="flex items-center justify-between">
                                                 <p className="text-[10px] text-natural-muted font-medium truncate flex-1 mr-2">
-                                                    {movie.genres?.replace(/,/g, ' · ')}
+                                                    {movie.genres}
                                                 </p>
                                             </div>
                                         </div>
@@ -225,7 +238,11 @@ const DiscoveryView: React.FC<DiscoveryViewProps> = ({ data }) => {
                         <div className="flex items-center gap-2">
                             <span className="font-serif italic text-lg text-natural-primary">{currentPage}</span>
                             <span className="text-natural-muted font-bold text-[10px] uppercase tracking-widest mx-2">OF</span>
-                            <span className="font-serif italic text-lg text-natural-primary">{totalPages}</span>
+                            {isCountLoading ? (
+                                <Loader2 className="w-4 h-4 text-natural-primary animate-spin mx-1" />
+                            ) : (
+                                <span className="font-serif italic text-lg text-natural-primary">{totalPages}</span>
+                            )}
                         </div>
 
                         <button

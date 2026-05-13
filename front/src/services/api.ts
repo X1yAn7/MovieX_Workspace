@@ -30,24 +30,32 @@ export const MovieService = {
         return { metrics, roiMovies, genres, ratings };
     },
 
-    /**
-     * 搜索与筛选电影列表（支持分页与排序）
-     * @param params 电影搜索参数对象
-     * @returns 包含电影列表及分页信息的 Promise
-     */
     searchMovies: async (params: MovieSearchParams): Promise<PageResult<MovieInfo>> => {
-        const queryParams = new URLSearchParams();
-
-        // 动态构建查询字符串
-        Object.entries(params).forEach(([key, value]) => {
-            if (value !== undefined && value !== null && value !== '') {
-                queryParams.append(key, String(value));
-            }
+        const response = await fetch('/api/movies/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(params)
         });
 
-        const queryString = queryParams.toString();
-        const endpoint = `/api/movies${queryString ? `?${queryString}` : ''}`;
-
-        return fetchApi<PageResult<MovieInfo>>(endpoint);
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+        const result = await response.json();
+        if (result.code !== 200) throw new Error(result.msg);
+        return result.data;
     },
+
+    /**
+     * 独立的获取查询总数接口，供前端静默加载使用
+     */
+    searchMoviesCount: async (params: MovieSearchParams): Promise<number> => {
+        const response = await fetch('/api/movies/search/count', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(params)
+        });
+
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+        const result = await response.json();
+        if (result.code !== 200) throw new Error(result.msg);
+        return result.data;
+    }
 };

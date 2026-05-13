@@ -22,20 +22,34 @@ public class MovieService {
         return movieMapper.getById(id);
     }
 
+    /**
+     * 优化点：增加 skipCount 参数。当跳过统计时，直接返回 total = 0
+     */
     public PageResult<MovieInfo> search(String title, String genre, Double minRating, Double maxRating,
                                         Integer year, Long minBudget, Long maxBudget,
                                         String orderBy, String orderDir,
-                                        Integer page, Integer pageSize) {
+                                        Integer page, Integer pageSize, Boolean skipCount) {
         String safeOrderBy = sanitizeOrderBy(orderBy);
         String safeDir = "DESC".equalsIgnoreCase(orderDir) ? "DESC" : "ASC";
         int offset = (page - 1) * pageSize;
 
         List<MovieInfo> records = movieMapper.search(title, genre, minRating, maxRating,
                 year, minBudget, maxBudget, safeOrderBy, safeDir, offset, pageSize);
-        Long total = movieMapper.searchCount(title, genre, minRating, maxRating,
-                year, minBudget, maxBudget);
+
+        Long total = 0L;
+        if (skipCount == null || !skipCount) {
+            total = movieMapper.searchCount(title, genre, minRating, maxRating, year, minBudget, maxBudget);
+        }
 
         return PageResult.of(records, total, page, pageSize);
+    }
+
+    /**
+     * 独立暴露的数据总数统计服务
+     */
+    public Long searchCount(String title, String genre, Double minRating, Double maxRating,
+                            Integer year, Long minBudget, Long maxBudget) {
+        return movieMapper.searchCount(title, genre, minRating, maxRating, year, minBudget, maxBudget);
     }
 
     public List<MovieInfo> getTopPopular(Integer limit) {
@@ -61,19 +75,7 @@ public class MovieService {
     }
 
     public List<String> getAllGenres() {
-        List<String> rawGenres = movieMapper.getAllGenres();
-        Set<String> genreSet = new TreeSet<>();
-        for (String g : rawGenres) {
-            if (g != null) {
-                for (String single : g.split("[,|/]")) {
-                    String trimmed = single.trim();
-                    if (!trimmed.isEmpty()) {
-                        genreSet.add(trimmed);
-                    }
-                }
-            }
-        }
-        return new ArrayList<>(genreSet);
+        return movieMapper.getAllGenres();
     }
 
     // ===== Dashboard aggregations =====
@@ -108,21 +110,14 @@ public class MovieService {
         return trends;
     }
 
-    /**
-     * 安全校验排序字段，并对数据库中缺失的 popularity 字段进行容灾降级
-     */
     private String sanitizeOrderBy(String orderBy) {
         Set<String> allowed = Set.of("id", "title", "vote_average", "revenue", "budget", "release_date");
-
-        // 容灾处理：如果前端显式请求按 popularity 排序，强制降级为按 revenue (票房) 排序
         if (orderBy != null && "popularity".equalsIgnoreCase(orderBy)) {
             return "revenue";
         }
-
         if (orderBy != null && allowed.contains(orderBy.toLowerCase())) {
             return orderBy.toLowerCase();
         }
-        // 默认排序从 popularity 改为 revenue
         return "revenue";
     }
 }

@@ -32,10 +32,6 @@ export interface DashboardData {
     ratings: RatingDist[];
 }
 
-/**
- * 电影详细信息实体
- * 严格映射后端 MovieInfo 实体类
- */
 export interface MovieInfo {
     id: number;
     title: string;
@@ -59,10 +55,6 @@ export interface MovieInfo {
     keywords: string;
 }
 
-/**
- * 通用分页返回结构
- * 映射后端 PageResult 结构
- */
 export interface PageResult<T> {
     records: T[];
     total: number;
@@ -70,9 +62,6 @@ export interface PageResult<T> {
     pageSize: number;
 }
 
-/**
- * 电影搜索请求参数接口
- */
 export interface MovieSearchParams {
     title?: string;
     genre?: string;
@@ -85,4 +74,5 @@ export interface MovieSearchParams {
     orderDir?: 'ASC' | 'DESC';
     page?: number;
     pageSize?: number;
+    skipCount?: boolean;
 }
