@@ -5,7 +5,7 @@ import {
   Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   Pie, PieChart as RePieChart, Cell
 } from 'recharts';
-import { cn } from '../lib/utils';
+import { cn,getTmdbImageUrl } from '../lib/utils';
 import { DashboardData } from '../types';
 
 interface DashboardViewProps {
@@ -178,15 +178,22 @@ const DashboardView: React.FC<DashboardViewProps> = ({ data }) => {
                   </td>
                   <td className="py-8 px-4">
                     <div className="flex items-center gap-6">
-                      {movie.posterPath ? (
-                        <div className="w-12 h-18 rounded-xl overflow-hidden shadow-soft border border-natural-border flex-shrink-0">
-                          <img src={`https://image.tmdb.org/t/p/w92${movie.posterPath}`} alt={movie.title} className="w-full h-full object-cover" />
-                        </div>
-                      ) : (
-                        <div className="w-12 h-18 rounded-xl bg-natural-sidebar border border-natural-border flex items-center justify-center flex-shrink-0">
-                          <Film className="w-5 h-5 text-natural-muted" />
-                        </div>
-                      )}
+                        <td className="py-8 px-4">
+                            <div className="flex items-center gap-6">
+                                <div className="w-12 h-18 rounded-xl overflow-hidden shadow-soft border border-natural-border flex-shrink-0">
+                                    <img
+                                        src={getTmdbImageUrl(movie.posterPath, 'w92')}
+                                        alt={movie.title}
+                                        className="w-full h-full object-cover bg-natural-sidebar"
+                                        onError={(e) => {
+                                            // 兜底方案：如果 TMDB 图片加载失败（比如网络问题），自动替换为本地占位图
+                                            (e.target as HTMLImageElement).src = '/default-movie-poster.png';
+                                        }}
+                                    />
+                                </div>
+                                <p className="text-sm font-bold text-natural-text group-hover:text-natural-primary transition-colors">{movie.title}</p>
+                            </div>
+                        </td>
                       <p className="text-sm font-bold text-natural-text group-hover:text-natural-primary transition-colors">{movie.title}</p>
                     </div>
                   </td>
