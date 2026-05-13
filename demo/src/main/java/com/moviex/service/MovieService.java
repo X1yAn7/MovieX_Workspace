@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class MovieService {
@@ -109,11 +108,21 @@ public class MovieService {
         return trends;
     }
 
+    /**
+     * 安全校验排序字段，并对数据库中缺失的 popularity 字段进行容灾降级
+     */
     private String sanitizeOrderBy(String orderBy) {
-        Set<String> allowed = Set.of("id", "title", "vote_average", "popularity", "revenue", "budget", "release_date");
+        Set<String> allowed = Set.of("id", "title", "vote_average", "revenue", "budget", "release_date");
+
+        // 容灾处理：如果前端显式请求按 popularity 排序，强制降级为按 revenue (票房) 排序
+        if (orderBy != null && "popularity".equalsIgnoreCase(orderBy)) {
+            return "revenue";
+        }
+
         if (orderBy != null && allowed.contains(orderBy.toLowerCase())) {
             return orderBy.toLowerCase();
         }
-        return "popularity";
+        // 默认排序从 popularity 改为 revenue
+        return "revenue";
     }
 }

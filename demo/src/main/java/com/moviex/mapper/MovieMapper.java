@@ -84,7 +84,10 @@ public interface MovieMapper {
                      @Param("minBudget") Long minBudget,
                      @Param("maxBudget") Long maxBudget);
 
-    @Select("SELECT * FROM movie_info ORDER BY popularity DESC LIMIT #{limit}")
+    /**
+     * 降级策略：原 popularity 排序改为 revenue (票房) 排序
+     */
+    @Select("SELECT * FROM movie_info ORDER BY revenue DESC LIMIT #{limit}")
     List<MovieInfo> getTopPopular(@Param("limit") Integer limit);
 
     @Select("SELECT * FROM movie_info ORDER BY vote_average DESC LIMIT #{limit}")
