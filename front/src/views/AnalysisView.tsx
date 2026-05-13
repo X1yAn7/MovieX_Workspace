@@ -207,7 +207,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ data }) => {
             <TrendingUp className="w-5 h-5 text-natural-secondary" />
           </div>
           <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <BarChart data={roiBuckets}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E5DE" />
                 <XAxis dataKey="range" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#8A8A82', fontWeight: 600 }} />
@@ -223,7 +223,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ data }) => {
           <div className="bg-white glass rounded-[40px] p-8 border border-natural-border shadow-soft">
             <h3 className="text-xs font-semibold uppercase text-natural-muted tracking-widest mb-8">类型雷达图</h3>
             <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <RadarChart data={topGenresRadar} outerRadius="80%">
                   <PolarGrid stroke="#E5E5DE" />
                   <PolarAngleAxis dataKey="genre" tick={{ fontSize: 10, fill: '#8A8A82', fontWeight: 600 }} />
