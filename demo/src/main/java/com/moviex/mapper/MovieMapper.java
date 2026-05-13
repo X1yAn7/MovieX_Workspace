@@ -2,6 +2,7 @@ package com.moviex.mapper;
 
 import com.moviex.entity.MovieInfo;
 import org.apache.ibatis.annotations.*;
+
 import java.util.List;
 
 @Mapper
@@ -18,7 +19,6 @@ public interface MovieMapper {
 
     /**
      * 延迟关联优化：先对纯字段表做排序分页并仅提取 id，之后再回表加载全部开销大的字段。
-     * 这将彻底避免 MySQL 为大文本内容分配巨大排序内存造成的慢查询。
      */
     @Select("<script>" +
             "SELECT m.id, m.title, m.original_language AS originalTitle, m.overview, " +

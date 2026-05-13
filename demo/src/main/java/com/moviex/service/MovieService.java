@@ -7,7 +7,8 @@ import com.moviex.mapper.MovieMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.List;
+import java.util.Set;
 
 @Service
 public class MovieService {
@@ -23,7 +24,7 @@ public class MovieService {
     }
 
     /**
-     * 优化点：增加 skipCount 参数。当跳过统计时，直接返回 total = 0
+     * 核心搜索服务：包含 skipCount 参数控制
      */
     public PageResult<MovieInfo> search(String title, String genre, Double minRating, Double maxRating,
                                         Integer year, Long minBudget, Long maxBudget,
@@ -45,7 +46,7 @@ public class MovieService {
     }
 
     /**
-     * 独立暴露的数据总数统计服务
+     * 独立的总数统计服务
      */
     public Long searchCount(String title, String genre, Double minRating, Double maxRating,
                             Integer year, Long minBudget, Long maxBudget) {

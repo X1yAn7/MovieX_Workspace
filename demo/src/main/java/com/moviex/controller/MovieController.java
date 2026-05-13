@@ -18,6 +18,9 @@ public class MovieController {
     @Autowired
     private MovieService movieService;
 
+    /**
+     * 数据传输对象（DTO）：封装复杂的查询参数
+     */
     @Data
     public static class MovieSearchRequest {
         private String title;
@@ -37,11 +40,14 @@ public class MovieController {
     @GetMapping("/{id}")
     public Result<MovieInfo> getById(@PathVariable("id") Integer id) {
         MovieInfo movie = movieService.getById(id);
-        return movie == null ? Result.error("电影不存在") : Result.success(movie);
+        if (movie == null) {
+            return Result.error("电影不存在");
+        }
+        return Result.success(movie);
     }
 
     /**
-     * 高速列表查询端点，配合 skipCount = true 可大幅降低响应时间
+     * 高速列表查询端点
      */
     @PostMapping("/search")
     public Result<PageResult<MovieInfo>> searchMovies(@RequestBody MovieSearchRequest req) {
@@ -53,7 +59,7 @@ public class MovieController {
     }
 
     /**
-     * 独立的耗时总数统计端点，供前端后台静默拉取
+     * 独立的数据总数统计端点
      */
     @PostMapping("/search/count")
     public Result<Long> searchMoviesCount(@RequestBody MovieSearchRequest req) {
@@ -91,6 +97,7 @@ public class MovieController {
 
     @DeleteMapping("/{id}")
     public Result<Boolean> delete(@PathVariable("id") Integer id) {
-        return movieService.delete(id) ? Result.success(true) : Result.error("删除失败");
+        boolean deleted = movieService.delete(id);
+        return deleted ? Result.success(true) : Result.error("删除失败，电影不存在");
     }
 }
