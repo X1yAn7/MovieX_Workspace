@@ -6,13 +6,14 @@ import AnalysisView from './views/AnalysisView';
 import DiscoveryView from './views/DiscoveryView';
 import CommunityView from './views/CommunityView';
 import { MovieService } from './services/api';
-import type { DashboardData } from './types';
+import type { DashboardData, MovieInfo } from './types';
 
 export default function App() {
     const [data, setData] = useState<DashboardData | null>(null);
     const [activeTab, setActiveTab] = useState('dashboard');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [selectedMovie, setSelectedMovie] = useState<MovieInfo | null>(null);
 
     useEffect(() => {
         const loadData = async () => {
@@ -54,8 +55,8 @@ export default function App() {
         switch (activeTab) {
             case 'dashboard': return <DashboardView data={data} />;
             case 'analysis': return <AnalysisView data={data} />;
-            case 'discovery': return <DiscoveryView data={data} />;
-            case 'community': return <CommunityView data={data} />;
+            case 'discovery': return <DiscoveryView data={data} onSelectMovie={setSelectedMovie} />;
+            case 'community': return <CommunityView data={data} selectedMovie={selectedMovie} onSelectMovie={setSelectedMovie} />;
             default: return <DashboardView data={data} />;
         }
     };

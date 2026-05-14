@@ -40,4 +40,7 @@ public class Review {
     
     /** 电影标题（关联查询字段，非数据库表字段） */
     private String movieTitle;
+
+    /** 电影海报地址（关联查询字段，非数据库表字段） */
+    private String moviePoster;
 }

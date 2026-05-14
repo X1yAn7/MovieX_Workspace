@@ -14,8 +14,14 @@ CREATE TABLE IF NOT EXISTS sys_user (
     role VARCHAR(20) NOT NULL DEFAULT 'USER' COMMENT '角色: USER/ADMIN',
     status TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0=禁用 1=正常',
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    -- 优化查询的索引
+    INDEX idx_role_status (role, status),
+    INDEX idx_create_time (create_time DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
+
+-- 创建全文索引用于搜索（MySQL 5.6+支持）
+ALTER TABLE sys_user ADD FULLTEXT INDEX ft_username_nickname (username, nickname);
 
 -- 评论表
 CREATE TABLE IF NOT EXISTS review (
@@ -26,9 +32,12 @@ CREATE TABLE IF NOT EXISTS review (
     content TEXT COMMENT '评论内容',
     sentiment VARCHAR(20) DEFAULT 'Neutral' COMMENT '情感: Positive/Neutral/Analytical/Critical',
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    INDEX idx_movie_id (movie_id),
-    INDEX idx_user_id (user_id),
-    INDEX idx_create_time (create_time)
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    -- 优化查询的复合索引
+    INDEX idx_movie_id_create_time (movie_id, create_time DESC),
+    INDEX idx_user_id_create_time (user_id, create_time DESC),
+    INDEX idx_rating_create_time (rating DESC, create_time DESC),
+    INDEX idx_movie_id_rating (movie_id, rating)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='电影评论表';
 
 -- 初始管理员账号 (密码: admin123)

@@ -51,6 +51,15 @@ public class ReviewController {
     }
 
     /**
+     * 获取热门热评
+     * GET /api/reviews/hot?limit=5
+     */
+    @GetMapping("/hot")
+    public Result<List<Review>> getHotReviews(@RequestParam(defaultValue = "5") Integer limit) {
+        return Result.success(reviewService.getHotReviews(limit));
+    }
+
+    /**
      * 获取电影平均评分
      * GET /api/reviews/movie/{movieId}/rating
      */

@@ -36,6 +36,10 @@ public class ReviewService {
         return reviewMapper.getLatest(limit == null ? 10 : limit);
     }
 
+    public List<Review> getHotReviews(Integer limit) {
+        return reviewMapper.getHotReviews(limit == null ? 5 : limit);
+    }
+
     public Review create(Review review) {
         reviewMapper.insert(review);
         return reviewMapper.getById(review.getId());

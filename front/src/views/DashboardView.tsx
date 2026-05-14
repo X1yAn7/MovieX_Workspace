@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { TrendingUp, Target, RotateCw, BarChart3, DollarSign, Film, Star } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { TrendingUp, Target, RotateCw, BarChart3, DollarSign, Film, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
     Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     Pie, PieChart as RePieChart, Cell
@@ -61,8 +61,91 @@ const DashboardView: React.FC<DashboardViewProps> = ({ data }) => {
     const genrePieData = topGenres.map(g => ({ name: g.genreName, value: g.movieCount }));
     const top10Roi = roiMovies.slice(0, 10);
 
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    const carouselVideos = [
+        { src: '/videos/video1.mp4', title: '消失的人', subtitle: '关于消失' },
+        { src: '/videos/video2.mp4', title: '飞驰人生3', subtitle: '关于人生' },
+        { src: '/videos/video3.mp4', title: '熊出没', subtitle: '关于回忆' },
+    ];
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const handleVideoEnd = () => {
+            setCurrentSlide((prev) => (prev + 1) % carouselVideos.length);
+        };
+
+        video.addEventListener('ended', handleVideoEnd);
+
+        return () => {
+            video.removeEventListener('ended', handleVideoEnd);
+        };
+    }, [currentSlide, carouselVideos.length]);
+
+    const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % carouselVideos.length);
+    const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + carouselVideos.length) % carouselVideos.length);
+
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
+            <div className="relative w-full overflow-hidden rounded-[40px] border border-natural-border shadow-soft">
+                <div className="relative w-full" style={{ height: 'calc(65vh)' }}>
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={currentSlide}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.8 }}
+                            className="absolute inset-0"
+                        >
+                            <video
+                                ref={videoRef}
+                                src={carouselVideos[currentSlide].src}
+                                autoPlay
+                                muted
+                                playsInline
+                                onEnded={nextSlide}
+                                className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+
+                            <div className="absolute bottom-20 left-16 right-16 text-white">
+                                <h2 className="font-serif text-5xl italic mb-3">{carouselVideos[currentSlide].title}</h2>
+                                <p className="text-lg text-white/90">{carouselVideos[currentSlide].subtitle}</p>
+                            </div>
+
+                            <button
+                                onClick={prevSlide}
+                                className="absolute left-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/30 transition-all"
+                            >
+                                <ChevronLeft className="w-6 h-6" />
+                            </button>
+                            <button
+                                onClick={nextSlide}
+                                className="absolute right-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/30 transition-all"
+                            >
+                                <ChevronRight className="w-6 h-6" />
+                            </button>
+
+                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3">
+                                {carouselVideos.map((_, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => setCurrentSlide(index)}
+                                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                                            index === currentSlide ? 'w-12 bg-white' : 'w-1.5 bg-white/50 hover:bg-white/70'
+                                        }`}
+                                    />
+                                ))}
+                            </div>
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
+            </div>
+
             {/* Metrics Cards */}
             <div className="grid grid-cols-4 gap-8">
                 {[

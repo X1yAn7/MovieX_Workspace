@@ -76,3 +76,45 @@ export interface MovieSearchParams {
     pageSize?: number;
     skipCount?: boolean;
 }
+
+// 后端评论 / 评分实体
+export interface Review {
+    id: number;
+    userId: number;
+    movieId: number;
+    rating: number;
+    content: string;
+    sentiment: string;
+    createTime: string;
+    userName?: string;
+    userAvatar?: string;
+    movieTitle?: string;
+    moviePoster?: string | null;
+}
+
+// 评论相关类型
+export interface Comment {
+    id: string;
+    userId: string;
+    userName: string;
+    userAvatar: string;
+    movieId: number;
+    movieTitle: string;
+    moviePoster?: string | null;
+    content: string;
+    likes: number;
+    isLiked: boolean;
+    favorites: number;
+    isFavorited: boolean;
+    createdAt: string;
+    rating?: number;
+    sentiment?: string;
+}
+
+export interface HotMovie {
+    movieId: number;
+    title: string;
+    posterPath: string | null;
+    commentCount: number;
+    topComment: Comment | null;
+}
