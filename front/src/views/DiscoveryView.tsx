@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Grid, List, Star, Film, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { DashboardData, MovieInfo, PageResult } from '../types';
@@ -42,54 +42,53 @@ const DiscoveryView: React.FC<DiscoveryViewProps> = ({ data }) => {
     const [activeGenre, setActiveGenre] = useState('全部');
     const [isLoading, setIsLoading] = useState(false);
     const [isCountLoading, setIsCountLoading] = useState(false);
-    const [lastQuerySignature, setLastQuerySignature] = useState('');
 
     const genreOptions = ['全部', ...data.genres.slice(0, 12).map(g => g.genreName)];
 
-    const fetchMovies = useCallback(async () => {
-        const currentSignature = `${searchQuery}-${activeGenre}`;
-        const isFilterChanged = currentSignature !== lastQuerySignature;
-
-        const searchParams = {
-            title: searchQuery || undefined,
-            genre: activeGenre === '全部' ? undefined : activeGenre,
-            page: currentPage,
-            pageSize: pageSize,
-            orderBy: 'revenue',
-            orderDir: 'DESC',
-            skipCount: true // 核心指令：跳过耗时的 Count
-        };
-
-        try {
-            setIsLoading(true);
-
-            // 1. 高速拉取并直接呈现列表
-            const result: PageResult<MovieInfo> = await MovieService.searchMovies(searchParams);
-            setMovies(result.records);
-            setIsLoading(false); // 列表数据就位，立即解开加载遮罩
-
-            // 2. 防抖更新总数：仅当搜索条件（非页码）发生变化时，后台静默拉取总数
-            if (isFilterChanged || total === 0) {
-                setIsCountLoading(true);
-                const totalCount = await MovieService.searchMoviesCount(searchParams);
-                setTotal(totalCount);
-                setLastQuerySignature(currentSignature);
-            }
-        } catch (error) {
-            console.error('Failed to fetch movies:', error);
-        } finally {
-            setIsLoading(false);
-            setIsCountLoading(false);
-        }
-    }, [searchQuery, activeGenre, currentPage, pageSize, lastQuerySignature, total]);
-
+    // 1. 独立防抖拉取：列表数据（受所有条件+页码驱动）
     useEffect(() => {
-        const handler = setTimeout(() => {
-            fetchMovies();
+        const handler = setTimeout(async () => {
+            try {
+                setIsLoading(true);
+                const result: PageResult<MovieInfo> = await MovieService.searchMovies({
+                    title: searchQuery || undefined,
+                    genre: activeGenre === '全部' ? undefined : activeGenre,
+                    page: currentPage,
+                    pageSize: pageSize,
+                    orderBy: 'revenue',
+                    orderDir: 'DESC',
+                    skipCount: true // 核心指令：跳过耗时的 Count
+                });
+                setMovies(result.records);
+            } catch (error) {
+                console.error('Failed to fetch movies:', error);
+            } finally {
+                setIsLoading(false);
+            }
         }, 300);
         return () => clearTimeout(handler);
-    }, [fetchMovies]);
+    }, [searchQuery, activeGenre, currentPage, pageSize]);
 
+    // 2. 独立防抖拉取：总数统计（仅受过滤条件驱动，与页码无关）
+    useEffect(() => {
+        const handler = setTimeout(async () => {
+            try {
+                setIsCountLoading(true);
+                const totalCount = await MovieService.searchMoviesCount({
+                    title: searchQuery || undefined,
+                    genre: activeGenre === '全部' ? undefined : activeGenre
+                });
+                setTotal(totalCount);
+            } catch (error) {
+                console.error('Failed to fetch count:', error);
+            } finally {
+                setIsCountLoading(false);
+            }
+        }, 300);
+        return () => clearTimeout(handler);
+    }, [searchQuery, activeGenre]);
+
+    // 3. 当搜索条件改变时，自动重置页码回第一页
     useEffect(() => {
         setCurrentPage(1);
     }, [searchQuery, activeGenre]);
@@ -210,7 +209,7 @@ const DiscoveryView: React.FC<DiscoveryViewProps> = ({ data }) => {
 
                                         <div className="space-y-2 px-2">
                                             <h4 className="text-sm font-bold text-natural-text group-hover:text-natural-primary transition-colors truncate">
-                                                {movie.title} <span className="font-mono text-[9px] text-natural-muted opacity-40 ml-1">#{movie.id}</span>
+                                                {movie.title}
                                             </h4>
                                             <div className="flex items-center justify-between">
                                                 <p className="text-[10px] text-natural-muted font-medium truncate flex-1 mr-2">
