@@ -24,8 +24,8 @@ public class HiveConfig {
     private String driverClassName;
 
     // 手动创建一个专属的数据源，不和 MySQL 抢戏
-    @Bean(name = "hiveDataSource")
-    public DataSource hiveDataSource() {
+    // 注意：不暴露为 @Bean，避免和 Spring Boot 自动配置的 MySQL 数据源冲突
+    private DataSource hiveDataSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName(driverClassName);
         dataSource.setUrl(url);
