@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TrendingUp, Target, RotateCw, BarChart3, DollarSign, Film, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
-    Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip,
     Pie, PieChart as RePieChart, Cell
 } from 'recharts';
 import { cn, getTmdbImageSources } from '../lib/utils';
 import { DashboardData } from '../types';
+import RechartsSized from '../components/RechartsSized';
 
 interface DashboardViewProps {
     data: DashboardData;
@@ -172,14 +173,16 @@ const DashboardView: React.FC<DashboardViewProps> = ({ data }) => {
                         <RotateCw className="w-4 h-4 text-natural-muted opacity-40" />
                     </div>
                     <div className="h-64 relative w-full overflow-hidden">
-                        <ResponsiveContainer width="99%" height="100%" minWidth={1}>
-                            <RePieChart>
+                        <RechartsSized height={256}>
+                            {({ width, height }) => (
+                            <RePieChart width={width} height={height}>
                                 <Pie data={genrePieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={3} dataKey="value" isAnimationActive={false}>
                                     {genrePieData.map((_entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
                                 </Pie>
                                 <Tooltip contentStyle={{ borderRadius: '20px', border: '1px solid #E5E5DE' }} />
                             </RePieChart>
-                        </ResponsiveContainer>
+                            )}
+                        </RechartsSized>
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                             <span className="text-[10px] font-bold text-natural-muted uppercase tracking-widest">核心类型</span>
                             <span className="font-serif italic text-2xl text-natural-primary">{topGenres[0]?.genreName || '-'}</span>
@@ -201,15 +204,17 @@ const DashboardView: React.FC<DashboardViewProps> = ({ data }) => {
                         <BarChart3 className="w-4 h-4 text-natural-muted opacity-40" />
                     </div>
                     <div className="h-64 relative w-full overflow-hidden">
-                        <ResponsiveContainer width="99%" height="100%" minWidth={1}>
-                            <BarChart data={ratings}>
+                        <RechartsSized height={256}>
+                            {({ width, height }) => (
+                            <BarChart width={width} height={height} data={ratings}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E5DE" />
                                 <XAxis dataKey="ratingRange" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#8A8A82', fontWeight: 600 }} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#8A8A82', fontWeight: 600 }} />
                                 <Tooltip cursor={{ fill: 'rgba(74, 93, 78, 0.05)' }} contentStyle={{ borderRadius: '20px', border: '1px solid #E5E5DE' }} />
                                 <Bar dataKey="movieCount" name="电影数量" fill="#4A5D4E" radius={[8, 8, 0, 0]} isAnimationActive={false} />
                             </BarChart>
-                        </ResponsiveContainer>
+                            )}
+                        </RechartsSized>
                     </div>
                 </div>
             </div>

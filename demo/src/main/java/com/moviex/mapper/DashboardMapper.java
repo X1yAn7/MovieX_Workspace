@@ -14,13 +14,20 @@ public interface DashboardMapper {
             "FROM movie_info WHERE revenue > 0 AND budget > 0")
     GlobalMetrics getGlobalMetrics();
 
-    @Select("SELECT * FROM ads_movie_roi_top ORDER BY roi_ratio DESC")
+    @Select(
+        "SELECT movie_id AS movieId, title AS title, budget AS budget, revenue AS revenue, "
+            + "profit AS profit, roi_ratio AS roiRatio, poster_path AS posterPath "
+            + "FROM ads_movie_roi_top ORDER BY roi_ratio DESC")
     List<MovieRoi> getTopRoiMovies();
 
-    @Select("SELECT * FROM ads_genre_distribution ORDER BY movie_count DESC")
+    @Select(
+        "SELECT genre_name AS genreName, movie_count AS movieCount "
+            + "FROM ads_genre_distribution ORDER BY movie_count DESC")
     List<GenreDist> getGenreDistribution();
 
-    @Select("SELECT * FROM ads_rating_distribution ORDER BY rating_range ASC")
+    @Select(
+        "SELECT rating_range AS ratingRange, movie_count AS movieCount "
+            + "FROM ads_rating_distribution")
     List<RatingDist> getRatingDistribution();
 
     @Select("SELECT YEAR(release_date) as year, COUNT(*) as count " +
