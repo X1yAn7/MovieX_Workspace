@@ -5,9 +5,10 @@ import {
     Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip,
     Pie, PieChart as RePieChart, Cell
 } from 'recharts';
-import { cn, getTmdbImageSources } from '../lib/utils';
+import { cn } from '../lib/utils';
 import { DashboardData } from '../types';
 import RechartsSized from '../components/RechartsSized';
+import MoviePoster from '../components/MoviePoster';
 
 interface DashboardViewProps {
     data: DashboardData;
@@ -23,32 +24,7 @@ function formatCurrency(value: number): string {
     return `$${value}`;
 }
 
-const MoviePoster: React.FC<{ posterPath: string | null, title: string }> = ({ posterPath, title }) => {
-    const sources = getTmdbImageSources(posterPath, 'w92');
-    const [errorCount, setErrorCount] = useState(0);
 
-    // 根据当前失败次数，智能选择加载的 CDN 节点。如果全部失败，就使用本地占位图
-    const currentSrc = errorCount < sources.length
-        ? sources[errorCount]
-        : '/default-movie-poster.png';
-
-    return (
-        <img
-            src={currentSrc}
-            alt={title}
-            className="w-full h-full object-cover transition-opacity duration-300"
-            onError={(e) => {
-                // 防止连本地默认图也加载失败引发的死循环崩溃
-                if (errorCount >= sources.length) {
-                    e.currentTarget.onerror = null;
-                    return;
-                }
-                // 触发状态更新，切换到下一个备用 CDN 节点
-                setErrorCount(prev => prev + 1);
-            }}
-        />
-    );
-};
 
 const DashboardView: React.FC<DashboardViewProps> = ({ data }) => {
     const {

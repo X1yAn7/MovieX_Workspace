@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Grid, List, Star, Film, ChevronLeft, ChevronRight, Loader2, X, Calendar, Filter } from 'lucide-react';
 import { DashboardData, MovieInfo, PageResult, MovieSearchParams } from '../types';
-import { cn, getTmdbImageSources } from '../lib/utils';
+import { cn } from '../lib/utils';
 import { MovieService } from '../services/api';
+import MoviePoster from '../components/MoviePoster';
 
 interface DiscoveryViewProps {
     data: DashboardData;
@@ -17,24 +18,6 @@ function formatCurrency(value: number): string {
     if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`;
     return `$${value}`;
 }
-
-const PosterImage: React.FC<{ path: string | null; alt: string; className?: string }> = ({ path, alt, className }) => {
-    const sources = [...getTmdbImageSources(path, 'w300'), '/default-movie-poster.png'];
-    const [sourceIndex, setSourceIndex] = useState(0);
-
-    return (
-        <img
-            src={sources[sourceIndex]}
-            alt={alt}
-            className={className}
-            onError={() => {
-                if (sourceIndex < sources.length - 1) {
-                    setSourceIndex(prev => prev + 1);
-                }
-            }}
-        />
-    );
-};
 
 const DiscoveryView: React.FC<DiscoveryViewProps> = ({ data, onSelectMovie }) => {
     const [movies, setMovies] = useState<MovieInfo[]>([]);
@@ -378,9 +361,9 @@ const DiscoveryView: React.FC<DiscoveryViewProps> = ({ data, onSelectMovie }) =>
                                         className="group cursor-pointer flex flex-col"
                                     >
                                         <div className="aspect-[3/4] relative rounded-[32px] overflow-hidden shadow-soft mb-6 border border-natural-border/50 group-hover:border-natural-primary/30 transition-all duration-500">
-                                            <PosterImage
-                                                path={movie.posterPath}
-                                                alt={movie.title}
+                                            <MoviePoster
+                                                posterPath={movie.posterPath}
+                                                title={movie.title}
                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                                             />
 
@@ -478,9 +461,9 @@ const DiscoveryView: React.FC<DiscoveryViewProps> = ({ data, onSelectMovie }) =>
                                         <div className="flex gap-8">
                                             {/* 海报 */}
                                             <div className="w-48 h-72 flex-shrink-0 rounded-[24px] overflow-hidden shadow-2xl border-4 border-white">
-                                                <PosterImage
-                                                    path={selectedMovie.posterPath}
-                                                    alt={selectedMovie.title}
+                                                <MoviePoster
+                                                    posterPath={selectedMovie.posterPath}
+                                                    title={selectedMovie.title}
                                                     className="w-full h-full object-cover"
                                                 />
                                             </div>
@@ -535,7 +518,7 @@ const DiscoveryView: React.FC<DiscoveryViewProps> = ({ data, onSelectMovie }) =>
                                                     </div>
                                                 </div>
 
-                                                <div className="grid grid-cols-2 gap-6 pt-4">
+                                                <div className="grid grid-cols-3 gap-6 pt-4">
                                                     <div className="bg-natural-sidebar rounded-[20px] p-4">
                                                         <span className="text-[10px] font-bold text-natural-muted uppercase tracking-widest block mb-1">预算</span>
                                                         <span className="font-serif text-2xl italic text-natural-primary">{formatCurrency(selectedMovie.budget)}</span>
@@ -544,7 +527,27 @@ const DiscoveryView: React.FC<DiscoveryViewProps> = ({ data, onSelectMovie }) =>
                                                         <span className="text-[10px] font-bold text-natural-muted uppercase tracking-widest block mb-1">票房</span>
                                                         <span className="font-serif text-2xl italic text-natural-secondary">{formatCurrency(selectedMovie.revenue)}</span>
                                                     </div>
+                                                    <div className="bg-natural-sidebar rounded-[20px] p-4">
+                                                        <span className="text-[10px] font-bold text-natural-muted uppercase tracking-widest block mb-1">ROI</span>
+                                                        {selectedMovie.roi != null ? (
+                                                            <span className="font-serif text-2xl italic text-natural-accent">
+                                                                {selectedMovie.roi.toFixed(2)}x
+                                                            </span>
+                                                        ) : (
+                                                            <span className="font-serif text-xl italic text-natural-muted">无</span>
+                                                        )}
+                                                    </div>
                                                 </div>
+                                                {selectedMovie.profit != null && selectedMovie.profit !== 0 && (
+                                                    <div className="pt-4">
+                                                        <div className={selectedMovie.profit > 0 ? "bg-emerald-50 rounded-[20px] p-4" : "bg-red-50 rounded-[20px] p-4"}>
+                                                            <span className="text-[10px] font-bold text-natural-muted uppercase tracking-widest block mb-1">净利润</span>
+                                                            <span className={`font-serif text-2xl italic ${selectedMovie.profit > 0 ? "text-emerald-700" : "text-red-600"}`}>
+                                                                {selectedMovie.profit > 0 ? '+' : ''}{formatCurrency(selectedMovie.profit)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
